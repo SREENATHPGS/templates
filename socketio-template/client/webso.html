@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href='static/css/form_style.css'>
+</head>
+<body>
+    <div id = "login_container" class="contact_us_main_container">
+        <div class="custom_container">
+            <p id="login_message"></p>
+            <div class="c_row">
+                <div style="display: flex; flex-direction: row;">
+                    <div class = "c_row" style="width: 50%;" id = "fbPagesList"></div>
+                    <div class = "c_row" style="width: 50%;" id = "igPagesList"></div>
+                </div>
+            </div>
+            
+            <div id = "chatbox">
+                <h4 id ="chatTitle"></h4>
+                                
+                <div id = "messages">
+                    
+                </div>
+                
+                <div class="c_row">
+                    <div class = "col_75">
+                        <textarea name="message" id="message" cols="30" rows="10" placeholder="Enter the message."></textarea>
+                    </div>
+                </div>
+                <div class="c_row">
+                    <input class="loginInput" type="button" onClick=sendMessage() value="Send">
+                </div> 
+            </div>
+            
+            <!-- Login Form Start -->
+            <form id="loginForm">
+                <div class="c_row">
+                    <div class="col_25">
+                        <label class="custom_font" for="username">Username</label>
+                    </div>
+                    <div class = "col_75">
+                        <input class="loginInput" type="text" id="username" name="username" placeholder="Enter the username." required>
+                    </div>
+                </div>
+                <!-- <div class="c_row">
+                    <div class="col_25">
+                        <label class = "custom_font" for="Password">Password</label>
+                    </div>
+                    <div class="col_75">
+                        <input class="loginInput" type="password" id="password" name="Password" placeholder="Enter the Password" required>
+                    </div>
+                </div> -->
+                <div class="c_row">
+                    <div class="col_25">
+                        <label class = "custom_font" for="Room">Room</label>
+                    </div>
+                    <div class="col_75">
+                        <input class="loginInput" type="text" id="room" name="Room" placeholder="Enter the Room id" required>
+                    </div>
+                </div>
+                
+                <div class="c_row">
+                    <div class="col-25">
+                        <label for="channel">Channel</label>
+                    </div>
+                    <div class="col-75">
+                        <datalist id="channelList" class="loginInput" name="channel">
+                            <option value="ws">Websockets</option>
+                            <option value="RTC">RTC - P2P</option>
+                        </datalist>
+                        <input class="loginInput" type="text" autoComplete="on" list="channelList" id="channel" name="channel">
+                    </div>
+                </div> 
+                
+                <div class="c_row">
+                    <input class="loginInput" type="button" onClick=login() value="Enter Room">
+                </div>            
+            </form>
+            <!-- Login Foem End -->
+        </div>
+    </div>
+    
+    <script src='static/js/vendor/socket.io/socket.io.js'></script>
+    
+    <script>
+        
+        var socketio = undefined;
+        
+        function makeid(length) {
+            var result           = '';
+            var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            var charactersLength = characters.length;
+            for ( var i = 0; i < length; i++ ) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            return result;
+        }
+        
+        var currentRoom = undefined;
+        var username = undefined;
+        
+        
+        var uid = makeid(6);
+        // const socketio = io("/", {query:"uid="+uid, transports: ['websocket']});
+        
+        function displayMessages(message, self= true) {
+            let txt = document.createElement("p");
+            txt.innerHTML = message;
+            document.getElementById("messages").appendChild(txt);
+        }
+        
+       
+        function sendMessage() {
+            let message = document.getElementById("message").value;
+            socketio.emit('data',{"username":username,"room":currentRoom, "data":message});
+            
+            callCallback(username+"##"+currentRoom+"##"+message);
+            
+            displayMessages(message);
+        }
+              
+        var login = function () {
+
+            console.log("Entering Room");
+            username = document.getElementById("username").value;
+            // let password = document.getElementById("password").value;
+            let room = document.getElementById("room").value;
+            
+            let payload = {
+                "username" : username,
+                // "password" : password,
+                "room" : room
+            }
+            
+            console.log("Initing..")
+	    	socketio = io("/", {query:"uid="+username, transports: ['websocket'], path : "/one/sio"});
+
+            document.getElementById("chatbox").style.display = "none";            
+            
+            socketio.on('connect', function(e) {
+                console.log("Connected...");
+            });
+            
+                      
+            socketio.on('data', function(data) {
+                console.log(data);
+                displayMessages(data, false);
+            });
+
+            socketio.on('error', function(){
+                console.log("backend error");
+            });
+            socketio.on('disconnect', function () {
+                console.log("Disconnected");
+            });
+        }
+    </script>
+    
+</body>
+</html>
